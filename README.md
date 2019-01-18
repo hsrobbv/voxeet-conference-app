@@ -8,9 +8,9 @@ Voxeet Conference App
 ## Table of contents
 
   1. [Project setup](#project-setup)
-  1. [Initializing the sample](#initializing-the-sample)
-  1. [Running the sample](#running-the-sample)
-  1. [Customise the Sample](#customise-the-sample)
+  1. [Initializing the project](#initializing-the-project)
+  1. [Running the project](#running-the-project)
+  1. [Customise the project](#customise-the-project)
   1. [Tech](#tech)
 
 ## Project setup
