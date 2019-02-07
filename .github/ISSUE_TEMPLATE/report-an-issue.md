@@ -1,32 +1,44 @@
 ---
 name: Report an issue
-about: You can use this template to report an issue to Voxeet.
+about: Use this template to report an issue to Voxeet.
 title: ''
-labels: ''
+labels: bug
 assignees: Energizz
 
 ---
 
-# Expected Behavior
+**Describe the bug**
 
+[A clear and concise description of what the bug is.]
 
-# Actual Behavior
+**Expected Behaviour**
 
+[Describe the expected behaviour of the feature.]
 
-# Steps to Reproduce the Problem
+**Steps to Reproduce the Problem**
 
-## Workflow
+  1. Go to...
+  2. Click...
+  3. See the...
 
-  1.
-  2.
-  3.
+**Minimalistic code (recommended)**
 
-# Minimalistic code
+[Please provide a link to a repository showing specifically the issue. It should only have the minimal footprint of your own implementation - something which does not requires any NDA.]
 
-_Please provide a link to a repository showing specifically the issue. It should only have the minimal footprint of your own implementation - something which does not requires any NDA_
+**Specifications**
 
-# Specifications
-
+  - Device: [e.g. iPhone6, MacBook Pro, ...]
+  - OS: [e.g. iOS8.1, macOS Mojave, ...]
+  - Platform: [e.g. Android, iOS, Chrome, ...]
+  - Subsystem: [e.g. n.a., CyanogenMod, ...]
   - Version:
-    - _for each libraries : name -> version`_
-  - Platform: _name and version of the platform where the issue appears_
+    - _for each libraries : name -> version_
+    - [e.g. @voxeet/voxeet-sdk 1.8.7]
+    - [e.g. @voxeet/react-components 0.31.0]
+    - [e.g. node 10.15.0]
+    - [...]
+  - Hardware:
+    - _list of each specific hardware element on the system_
+    - [e.g. bluetooth headset]
+    - [e.g. camera]
+    - [...]
