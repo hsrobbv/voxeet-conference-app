@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import 'core-js/es6/';
+import logo from '../static/images/logo.svg';
 import ReactDOM from 'react-dom'
 import PropTypes from 'prop-types'
 import { Provider } from 'react-redux'
@@ -7,25 +7,24 @@ import thunkMidleware from 'redux-thunk'
 import { combineReducers, createStore, applyMiddleware } from 'redux'
 
 import VoxeetSdk from '@voxeet/voxeet-web-sdk'
-import { ConferenceRoom, reducer as voxeetReducer } from './app/VoxeetReactComponents'
+import { ConferenceRoom, reducer as voxeetReducer } from './VoxeetReactComponents.js'
 
 class VoxeetConference extends Component {
 
   componentDidMount() {
     let conferenceName = this.props.conferenceName.trim().toLowerCase().replace(/ /g,'')
-    let name = this.props.userName
-    let photoURL = this.props.photoURL
-
     const settings = {
       conferenceAlias: conferenceName,
       consumerKey: 'CONSUMER_KEY',
       consumerSecret: 'CONSUMER_SECRET'
     };
-
     const reducers = combineReducers({
       voxeet: voxeetReducer
     });
 
+
+    let name = this.props.userName
+    let photoURL = this.props.photoURL
     if (this.props.userName.length == 0) {
       name = 'Guest ' + Math.floor((Math.random() * 100) + 1)
     }
@@ -35,33 +34,30 @@ class VoxeetConference extends Component {
       externalId: this.props.externalId,
       avatarUrl: photoURL
     };
-
     var constraints = {
       audio: true,
       video: false
     };
-
     var videoRatio = {
       width: 1280,
       height: 720
     }
-
     const configureStore = () => createStore(
       reducers,
       applyMiddleware(thunkMidleware)
     );
-
     let displayModes = ["tiles", "speaker"]
-
+    if (this.props.isDemo && VoxeetSdk.isElectron) {
+      displayModes = ["list", "tiles", "speaker"]
+    } else if (VoxeetSdk.isElectron) {
+      displayModes = ["tiles", "speaker", "list"]
+    }
     ReactDOM.render(
       <Provider store={configureStore()}>
         <ConferenceRoom
           autoJoin
-          sdk={this.props.sdk}
           userInfo={userInfo}
-          //preConfig
-          //isWebinar
-          //isAdmin
+          isListener={this.props.isListener}
           liveRecordingEnabled
           videoCodec={"H264"}
           chromeExtensionId={"ENTER YOUR CHROME STORE ID FOR SCREENSHARE"}
@@ -92,6 +88,7 @@ VoxeetConference.propTypes = {
     photoURL: PropTypes.string,
     sdk: PropTypes.object,
     externalId: PropTypes.string,
+    isListener: PropTypes.bool,
     userName: PropTypes.string,
     handleOnLeave: PropTypes.func.isRequired
 }
