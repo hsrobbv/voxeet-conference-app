@@ -43,7 +43,6 @@ class AttendeesList extends Component {
         const participantsInvited = this.props.participantWaiting.participants.filter(p => (p.status == "Reserved"))
         const participantsInactive = this.props.participantWaiting.participants.filter(p => (p.status == "Inactive"))
         const participantsLeft = this.props.participantWaiting.participants.filter(p => (p.status == "Left"))
-        console.log(participants)
         return (
             <div className="attendees-list">
 
