@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types'
-import logo from './static/images/logo.svg';
-import './styles/login/App.less';
 import ReactDOM from 'react-dom'
-import Sdk from './app/sdk'
+import logo from '../static/images/logo.svg';
+import '../styles/App.css';
+import Sdk from './sdk'
 import VoxeetConference from './VoxeetConference'
 import VoxeetSdk from '@voxeet/voxeet-web-sdk'
 import LocalizedStrings from 'react-localization';
@@ -12,15 +12,17 @@ let strings = new LocalizedStrings({
  en:{
    join:"Join call",
    name:"Your Name",
+   admin:"Admin",
    conferencename:"Your conference name",
-   loadermessage:"Voxeet is loading, please wait",
+   electronmessage:"Voxeet is loading, please wait",
    copyright:" All rights reserved"
  },
  fr: {
    join:"Rejoindre la conférence",
    name:"Nom",
+   admin:"Administrateur",
    conferencename:"Nom de la conférence",
-   loadermessage:"Le client Voxeet va démarrer, veuillez patienter",
+   electronmessage:"Le client Voxeet va démarrer, veuillez patienter",
    copyright:"Tous droits réservés"
  }
 });
@@ -31,7 +33,7 @@ class App extends Component {
       super(props);
       this.state = {
         isSubmit: false,
-        sdk:null,
+        isListener: false,
         isJoiningFromUrl: false,
         form : {
           conferenceName: "",
@@ -41,6 +43,7 @@ class App extends Component {
       this.handleClick = this.handleClick.bind(this)
       this.handleChange = this.handleChange.bind(this)
       this.escFunction = this.escFunction.bind(this)
+      this.toggleChangeListener = this.toggleChangeListener.bind(this)
   }
 
   componentWillMount() {
@@ -78,17 +81,24 @@ class App extends Component {
   }
 
   handleOnLeave() {
-    /*ReactDOM.unmountComponentAtNode(document.getElementById('voxeet-widget'));
-    const oldConferenceName = this.state.form.conferenceName*/
     this.setState({ isSubmit: false })
-    this.props.history.push('/')
-    window.location.reload()
+  }
+
+  toggleChangeListener() {
+    this.setState({
+      isListener: !this.state.isListener,
+    });
   }
 
   handleClick() {
     this.props.history.push('/' + this.state.form.conferenceName)
+    this.setState({ isJoiningFromUrl: false, isSubmit: true})
+    this.props.handleJoin();
+  }
+
+  handleClickDemo() {
     const sdk = Sdk.create()
-    this.setState({ isJoiningFromUrl: false, sdk: sdk, isSubmit: true})
+    this.setState({ sdk: sdk, isDemo: true, isSubmit: true})
     this.props.handleJoin();
   }
 
@@ -98,19 +108,19 @@ class App extends Component {
         return (
           <div>
             <div>
-              <div className="loader-message-container">
-                <div className="loader-center-container">
-                  <div className="loader-logo-container">
+              <div className="electron-message-container">
+                <div className="electron-center-container">
+                  <div className="electron-logo-container">
                     <img src={logo} />
                   </div>
                   <div id="loader-container"><div className="loader"></div></div>
-                  <div className="loader-info-container">
-                    {strings.loadermessage}<span className="one">.</span><span className="two">.</span><span className="three">.</span>​
+                  <div className="electron-info-container">
+                    {strings.electronmessage}<span className="one">.</span><span className="two">.</span><span className="three">.</span>​
                   </div>
                 </div>
               </div>
             </div>
-            <VoxeetConference handleOnLeave={this.handleOnLeave.bind(this)} sdk={this.state.sdk} userName={this.state.form.userName} photoURL={photoURL} conferenceName={this.state.form.conferenceName} />
+            <VoxeetConference isListener={this.state.isListener} handleOnLeave={this.handleOnLeave.bind(this)} userName={this.state.form.userName} photoURL={photoURL} conferenceName={this.state.form.conferenceName} />
           </div>
         )
     }
@@ -131,14 +141,20 @@ class App extends Component {
             <input name="userName" placeholder={strings.name} value={this.state.form.userName} onChange={this.handleChange} id="userName" type="text" className="validate" />
           </div>
 
+          <input type="checkbox" id="isListener" checked={this.state.isListener} onChange={this.toggleChangeListener} />
+          <label id="isListenerLabel" htmlFor="isListener">Join as a listener</label>
+
           <div className="blockButton">
             <button id="join" disabled={ this.state.form.conferenceName.length == 0 ? true : false } className={ this.state.form.conferenceName.length == 0 ? "waves-effect waves-light disable" : "waves-effect waves-light" } onClick={this.handleClick}>
               <span>{strings.join}</span>
             </button>
           </div>
+          <button className="button-demo" onClick={this.handleClickDemo.bind(this)}>
+            <span>{strings.joinDemo}</span>
+          </button>
         </div>
         <div className="copyright">
-          Voxeet © 2019 {strings.copyright}
+          Voxeet © 2018 {strings.copyright}
         </div>
       </div>
     );

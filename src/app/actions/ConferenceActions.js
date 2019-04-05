@@ -61,18 +61,16 @@ export class Actions {
     static initialize(consumerKey, consumerSecret, userInfo) {
         return dispatch => {
             return this._initializeListeners(dispatch)
-                .then(() => Sdk.instance.userId || Sdk.instance.initialize(consumerKey, consumerSecret, userInfo))
+                .then(() => Sdk.instance.userId || Sdk.instance.initialize(consumerKey, consumerSecret, userInfo).catch(err => { this._throwErrorModal(err) }))
                 .then(userId => dispatch(this._sdkInitializedSuccessful(userId)))
-                .catch(err => { this._throwErrorModal(err) })
+                .catch(err => { dispatch(ErrorActions.onError(err)) })
         }
     }
 
-    static initializeWithToken(token, userInfo, refreshTokenCallback) {
+    static initializeWithToken(token, refreshTokenCallback, userInfo) {
         return dispatch => {
             return this._initializeListeners(dispatch)
-                .then(() => Sdk.instance.userId || Sdk.instance.initializeToken(token, userInfo, () => {
-                   return refreshTokenCallback();
-                }))
+                .then(() => Sdk.instance.userId || Sdk.instance.initializeToken(token, userInfo, () => { return refreshTokenCallback() }).catch(err => { this._throwErrorModal(err) }))
                 .then(userId => dispatch(this._sdkInitializedSuccessful(userId)))
                 .catch(err => { this._throwErrorModal(err) })
         }
@@ -137,7 +135,7 @@ export class Actions {
         }
     }
 
-    static join(conferenceAlias, isAdmin, constraints, liveRecordingEnabled, ttl, rtcpmode, mode, videoCodec, userInfoRaw, videoRatio, isElectron) {
+    static join(conferenceAlias, isAdmin, constraints, liveRecordingEnabled, ttl, rtcpmode, mode, videoCodec, userInfoRaw, videoRatio, isElectron, isListener) {
         return (dispatch, getState) => {
             dispatch(ParticipantActions.clearParticipantsList())
             dispatch(this._conferenceConnecting())
@@ -150,12 +148,11 @@ export class Actions {
                 admin: isAdmin
               }
             }
-
             if (participants.isWebinar && !isAdmin) {
               constraints.video = false
               constraints.audio = false
             }
-
+            if (!bowser.msie) {
               Sdk.instance.enumerateVideoDevices()
                 .then((devices) => {
                    if (devices.length == 0) {
@@ -168,22 +165,36 @@ export class Actions {
                      constraints.audio = false
                    }
               });
+            }
 
               if (constraints.video && videoRatio != null) {
                 constraints.video = videoRatio
               }
 
+              if (isListener) {
+                return Sdk.instance.listenConference(conferenceAlias)
+                .then(function(res) {
+                  if (navigator.userAgent.match(/(iPod|iPhone|iPad)/) && navigator.userAgent.match(/AppleWebKit/)) {
+                    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                  }
+                  dispatch(ConferenceActions._conferenceJoined(res.conferenceId, res.conferencePinCode));
+                  dispatch(ParticipantActions.saveCurrentUser(userInfo.name, userInfo.avatarUrl, userInfo.externalId));
+                  dispatch(ControlsActions.toggleWidget())
+                  dispatch(ParticipantActions.triggerHandleOnConnect());
+                })
+            }
             return Sdk.instance.createConference({alias: conferenceAlias, params : { liveRecording: liveRecordingEnabled, ttl: ttl, stats: 'true', rtcpmode: rtcpmode, mode: mode, videoCodec: videoCodec }})
-              .then(function(data) {
+              .then((data) => {
                     return Sdk.instance.joinConference(data.conferenceId, {
                         constraints,
-                        'audio3D': (isElectron ? true : false),
+                        audio3D: (isElectron ? true : false),
                         user : userInfo,
-                    }).then(function(res) {
+                    })
+                    .then((res) => {
                         if (Sdk.instance.extensions.hasElectron()) {
                           dispatch(ConferenceActions.hasElectron())
                         } else {
-                          dispatch(ConferenceActions._conferenceJoined(res.conferenceId));
+                          dispatch(ConferenceActions._conferenceJoined(res.conferenceId, res.conferencePincode));
                           dispatch(ParticipantActions.saveCurrentUser(userInfo.name, userInfo.avatarUrl, userInfo.externalId));
                           dispatch(ControlsActions.toggleWidget())
                           dispatch(ControlsActions.saveConstraints(constraints))
@@ -192,14 +203,14 @@ export class Actions {
                             dispatch(ControlsActions.toggleVideo(true))
                           }
                         }
-                    })
+                    }).catch(err => { dispatch(ErrorActions.onError(err)) })
             })
-            .catch(err => { this._throwErrorModal(err) })
+            .catch(err => { dispatch(ErrorActions.onError(err)) })
         }
     }
 
 
-    static joinWithConferenceId(conferenceId, constraints, userInfo, videoRatio, isElectron) {
+    static joinWithConferenceId(conferenceId, constraints, userInfo, videoRatio, isElectron, isListener) {
         return (dispatch, getState) => {
             dispatch(ParticipantActions.clearParticipantsList())
             dispatch(this._conferenceConnecting())
@@ -216,12 +227,22 @@ export class Actions {
               constraints.video = videoRatio
             }
 
+            if (isListener) {
+              return Sdk.instance.listenConference(conferenceId)
+              .then(function(res) {
+                dispatch(ConferenceActions._conferenceJoined(res.conferenceId, res.conferencePinCode));
+                dispatch(ParticipantActions.saveCurrentUser(userInfo.name, userInfo.avatarUrl, userInfo.externalId));
+                dispatch(ControlsActions.toggleWidget())
+                dispatch(ParticipantActions.triggerHandleOnConnect());
+              })
+            }
+
             return Sdk.instance.joinConference(conferenceId, {
                 constraints,
                 'audio3D': (isElectron ? true : false),
                 user : userInfo,
             }).then(function(res) {
-                  dispatch(ConferenceActions._conferenceJoined(res.conferenceId))
+                  dispatch(ConferenceActions._conferenceJoined(res.conferenceId, res.conferencePinCode))
                   dispatch(ParticipantActions.saveCurrentUser(userInfo.name, userInfo.avatarUrl, userInfo.externalId));
                   dispatch(ControlsActions.toggleWidget())
                   dispatch(ControlsActions.saveConstraints(constraints))
@@ -267,10 +288,13 @@ export class Actions {
         return dispatch => {
             return Sdk.instance.leaveConference()
                 .then(() => {
+                  Sdk.instance.closeSession().then(() => {
+                    Sdk.destroy()
                     dispatch(TimerActions.stopTime());
                     dispatch({
                         type: Types.CONFERENCE_LEAVE
                     })
+                  })
                 })
         }
     }
@@ -362,7 +386,6 @@ export class Actions {
             if (enableScreenShare)
                 return Sdk.instance.startScreenShare(type)
                 .catch(err => {
-                  console.log(err)
                   if (err.message == "Chrome Web Extension is not installed" && controls.chromeExtensionId != null) {
                     dispatch(OnBoardingMessageWithActionActions.onBoardingMessageWithAction(strings.installExtension , "https://chrome.google.com/webstore/detail/" + controls.chromeExtensionId))
                   } else if (err.message == "Chrome Web Extension is not installed" && controls.chromeExtensionId == null) {
@@ -687,11 +710,12 @@ export class Actions {
         }
     }
 
-    static _conferenceJoined(conferenceId) {
+    static _conferenceJoined(conferenceId, conferencePincode) {
         return {
             type: Types.CONFERENCE_JOINED,
             payload: {
-                conferenceId
+                conferenceId,
+                conferencePincode
             }
         }
     }

@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Fragment, Component } from 'react'
 import PropTypes from 'prop-types'
 import LocalizedStrings from 'react-localization'
 import { connect } from 'react-redux'
@@ -11,14 +11,16 @@ const LABELS = new LocalizedStrings({
         joined: "Joined",
         invited: "Waiting On",
         presenter: "Presenter",
-        listener: "Listener"
+        listener: "Listener",
+        left: "Left"
     },
     fr: {
         attendees: "Participants",
         joined: "En conférence",
         invited: "En attente",
         presenter: "Présentateur",
-        listener: "Auditeur"
+        listener: "Auditeur",
+        left: "Déconnecté"
     }
 });
 
@@ -40,6 +42,7 @@ class AttendeesList extends Component {
         const participantsConnected = participants.filter(p => p.isConnected)
         const participantsInvited = this.props.participantWaiting.participants.filter(p => (p.status == "Reserved"))
         const participantsInactive = this.props.participantWaiting.participants.filter(p => (p.status == "Inactive"))
+        const participantsLeft = this.props.participantWaiting.participants.filter(p => (p.status == "Left"))
         return (
             <div className="attendees-list">
 
@@ -100,6 +103,7 @@ class AttendeesList extends Component {
                         }
                     </div>
                     :
+                    <Fragment>
                     <div>
                         <div className="title-section">{LABELS.joined}</div>
                         <ul>
@@ -120,6 +124,23 @@ class AttendeesList extends Component {
                             })}
                         </ul>
                     </div>
+                    { participantsInactive.length > 0 &&
+                    <div>
+                        <div className="title-section">{LABELS.listener}</div>
+                        <ul>
+                            {participantsInactive.map((participant, i) => {
+                                return (
+                                    <li key={i}>
+                                        <span className="participant-details">
+                                            <img src={participant.avatarUrl || userPlaceholder} className="participant-avatar" />
+                                            <span className="participant-username">{participant.name}</span>
+                                        </span>
+                                    </li>)
+                                })}
+                            </ul>
+                    </div>
+                    }
+                    </Fragment>
                 }
 
 
@@ -128,6 +149,24 @@ class AttendeesList extends Component {
                         <div className="title-section">{LABELS.invited}</div>
                         <ul className="participant-invited">
                             {participantsInvited.map((participant, i) => {
+                                return (
+                                    <li key={i}>
+                                        <span className="participant-details">
+                                            <img src={participant.avatarUrl || userPlaceholder} className="participant-avatar" />
+                                            <span className="participant-username">{participant.name}</span>
+                                        </span>
+                                    </li>)
+                            })}
+                        </ul>
+                    </div>
+                }
+
+
+                { participantsLeft.length > 0 &&
+                    <div>
+                        <div className="title-section">{LABELS.left}</div>
+                        <ul className="participant-invited">
+                            {participantsLeft.map((participant, i) => {
                                 return (
                                     <li key={i}>
                                         <span className="participant-details">

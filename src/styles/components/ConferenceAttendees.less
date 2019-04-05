@@ -874,7 +874,7 @@
                   .participant-video {
                     .stream-media {
                       video {
-                        max-height: inherit!important;
+                        //max-height: inherit!important;
                       }
                     }
                   }
@@ -891,7 +891,7 @@
                        .participant-video {
                          .stream-media {
                            video {
-                             max-height: -webkit-fill-available!important;
+                             max-height: stretch!important;
                              object-fit: contain;
                            }
                          }
@@ -1137,6 +1137,11 @@
             vertical-align: middle; //width: 100%;
             max-width: 100%!important;
             padding-bottom: 26px;
+            object {
+                flex: 1;
+                height: 70%;
+                max-width: 100%;
+            }
             .video-participant {
                 max-width: 150px;
                 max-height: 150px;
